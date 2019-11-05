@@ -14,7 +14,6 @@ MainWindow::MainWindow(QWidget *parent) :
     //layout
     ui->setupUi(this);
     ui->prbVerloop->setValue(0);
-    ui->lstOutput->setEnabled(false);
     ui->lstPrograms->setContextMenuPolicy(Qt::CustomContextMenu);
 
     //connects
@@ -101,7 +100,6 @@ void MainWindow::startInstall()
 {
     QString fullUrl;
     QStringList arg;
-    bool finish = false;
 
     int ongoing = 100 / m_programList.count();
     for(int i=0; i < m_programList.count(); ++i){
@@ -122,11 +120,7 @@ void MainWindow::startInstall()
 
         QProcess *process = new QProcess(this);
         process->start(fullUrl, arg);
-        while(!finish){
-            finish = process->waitForFinished(200);
-            QCoreApplication::processEvents();
-        }
-
+        process->waitForFinished(-1);
         QProcess::ProcessError error = process->error();
         if(error == QProcess::ProcessError::FailedToStart){
             ui->lstOutput->addItem(fullUrl + "\n\rFailed to start!!\n\r" + process->errorString());
@@ -142,6 +136,7 @@ void MainWindow::startInstall()
         else{
             ui->lstOutput->addItem(fullUrl + "\n\rended");
         }
+        process->close();
     }
 }
 
@@ -150,6 +145,7 @@ void MainWindow::setArguments()
     if(ui->lstPrograms->currentRow() != -1){
         m_programList[ui->lstPrograms->currentRow()].setArguments(ui->lneArguments->text().split(" "));
         m_programList[ui->lstPrograms->currentRow()].setScriptUrl(ui->lneScriptUrl->text());
+        savePrograms();
     }else{
         QMessageBox allert;
         allert.setIcon(QMessageBox::Information);
