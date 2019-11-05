@@ -126,7 +126,7 @@ void MainWindow::startInstall()
             finish = process->waitForFinished(200);
             QCoreApplication::processEvents();
         }
-
+        process->close();
         QProcess::ProcessError error = process->error();
         if(error == QProcess::ProcessError::FailedToStart){
             ui->lstOutput->addItem(fullUrl + "\n\rFailed to start!!\n\r" + process->errorString());
