@@ -4,7 +4,6 @@
 #include <QDebug>
 #include <qfiledialog.h>
 #include <iostream>
-#include <QProcess>
 #include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -22,6 +21,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->btnScriptUrl, SIGNAL(clicked()), this, SLOT(openScriptMenu()));
     connect(ui->lstPrograms, SIGNAL(itemClicked(QListWidgetItem *)), this, SLOT(loadClickedItemSettings()));
     connect(ui->btnCancel, SIGNAL(clicked()), this, SLOT(cancelSettings()));
+    connect(process, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(processEnd(int, QProcess::ExitStatus)));
+
+    //variable initialization
+    processNumber = 0;
 
     //calls
     loadPrograms();
@@ -95,48 +98,41 @@ void MainWindow::deletePrograms()
     }
 }
 
+//einde van een process opvangen
+void MainWindow::processEnd(int, QProcess::ExitStatus status)
+{
+    if(status == QProcess::ExitStatus::NormalExit){
+       ui->lstOutput->addItem(fullUrl + "\n\rended");
+    }else{
+       ui->lstOutput->addItem(fullUrl + "\n\rFailed to start!!\n\r" + process->errorString());
+    }
+    int ongoing = 100 / m_programList.count();
+    if(processNumber == ui->lstPrograms->count() - 1){
+        ui->prbVerloop->setValue(100);
+    }else{
+        ui->prbVerloop->setValue(ongoing * (processNumber+1));
+    }
+    processNumber++;
+    startInstall();
+}
+
 //starten van de instalatie
 void MainWindow::startInstall()
 {
-    QString fullUrl;
-    QStringList arg;
-
-    int ongoing = 100 / m_programList.count();
-    for(int i=0; i < m_programList.count(); ++i){
-        if(i == ui->lstPrograms->count() - 1){
-            ui->prbVerloop->setValue(100);
+    if(processNumber <= m_programList.count()-1){
+        if(m_programList[processNumber].hasScript()){
+            fullUrl = m_programList[processNumber].scriptUrl();
         }else{
-            ui->prbVerloop->setValue(ongoing * (i+1));
-        }
-        if(m_programList[i].hasScript()){
-            fullUrl = m_programList[i].scriptUrl();
-        }else{
-            fullUrl = m_programList[i].fullUrl();
+            fullUrl = m_programList[processNumber].fullUrl();
         }
 
-        if(m_programList[i].hasArguments()){
-            arg = m_programList[i].arguments();
+        if(m_programList[processNumber].hasArguments()){
+            arg = m_programList[processNumber].arguments();
         }
-
-        QProcess *process = new QProcess(this);
         process->start(fullUrl, arg);
-        process->waitForFinished(-1);
-        QProcess::ProcessError error = process->error();
-        if(error == QProcess::ProcessError::FailedToStart){
-            ui->lstOutput->addItem(fullUrl + "\n\rFailed to start!!\n\r" + process->errorString());
-        }else if(error == QProcess::ProcessError::Crashed){
-            ui->lstOutput->addItem(fullUrl + "\n\rCrached!!\n\r" + process->errorString());
-        }else if(error == QProcess::ProcessError::Timedout){
-            ui->lstOutput->addItem(fullUrl + "\n\rTimedout!!\n\r" + process->errorString());
-        }else if(error == QProcess::ProcessError::ReadError){
-            ui->lstOutput->addItem(fullUrl + "\n\rRead error!!\n\r" + process->errorString());
-        }else if(error == QProcess::ProcessError::WriteError){
-            ui->lstOutput->addItem(fullUrl + "\n\rWrite error!!\n\r" + process->errorString());
-        }
-        else{
-            ui->lstOutput->addItem(fullUrl + "\n\rended");
-        }
-        process->close();
+    }
+    if(processNumber == m_programList.count()){
+        processNumber = 0;
     }
 }
 
@@ -206,5 +202,7 @@ void MainWindow::removeUnusedPrograms(QStringList programs)
         }
     }
 }
+
+
 
 
