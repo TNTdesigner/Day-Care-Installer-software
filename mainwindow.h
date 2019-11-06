@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include "program.h"
-
+#include <QProcess>
 #include <QMainWindow>
 #include <qdir.h>
 #include <qlistwidget.h>
@@ -38,12 +38,17 @@ private slots:
     void cancelSettings();
     int  programExist(Program);
     void removeUnusedPrograms(QStringList);
+    void processEnd(int,QProcess::ExitStatus);
 
 private:
     Ui::MainWindow *ui;
     QDir m_root;
     QListWidget *m_list;
     QList<Program> m_programList;
+    QProcess *process = new QProcess(this);
+    int processNumber;
+    QString fullUrl;
+    QStringList arg;
 };
 
 #endif // MAINWINDOW_H
