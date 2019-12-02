@@ -171,6 +171,8 @@ void MainWindow::processEnd(int, QProcess::ExitStatus status)
 //starten van de instalatie
 void MainWindow::startInstall()
 {
+    ui->btnStart->setDisabled(true);
+    ui->lstOutput->addItem("Starting install");
     if(processNumber <= m_programList.count()-1){
         if(m_programList[processNumber].hasScript()){
             fullUrl = m_programList[processNumber].scriptUrl();
