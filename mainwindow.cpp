@@ -10,6 +10,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+
     //layout
     ui->setupUi(this);
     ui->prbVerloop->setValue(0);
@@ -23,11 +24,44 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->btnCancel, SIGNAL(clicked()), this, SLOT(cancelSettings()));
     connect(process, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(processEnd(int, QProcess::ExitStatus)));
 
+    //see if the envirement is windows 64bit er 32bit
+    IsWow64();
+    if(bIsWow64){
+        ui->lstOutput->addItem("Running in 64bit envirement");
+    }else{
+        ui->lstOutput->addItem("Running in 32bit envirement");
+    }
+
     //variable initialization
     processNumber = 0;
 
     //calls
     loadPrograms();
+}
+
+typedef BOOL (WINAPI *LPFN_ISWOW64PROCESS) (HANDLE, PBOOL);
+
+LPFN_ISWOW64PROCESS fnIsWow64Process;
+
+void MainWindow::IsWow64()
+{
+    bIsWow64 = FALSE;
+
+    //IsWow64Process is not available on all supported versions of Windows.
+    //Use GetModuleHandle to get a handle to the DLL that contains the function
+    //and GetProcAddress to get a pointer to the function if available.
+
+    fnIsWow64Process = (LPFN_ISWOW64PROCESS) GetProcAddress(
+        GetModuleHandle(TEXT("kernel32")),"IsWow64Process");
+
+    if(NULL != fnIsWow64Process)
+    {
+        if (!fnIsWow64Process(GetCurrentProcess(),&bIsWow64))
+        {
+            //handle error
+            ui->lstOutput->addItem("error calling fnIsWow64Process\n\r");
+        }
+    }
 }
 
 //deconstructor + opslagen van de programma's
@@ -41,7 +75,13 @@ MainWindow::~MainWindow()
 void MainWindow::on_actionAdd_Program_triggered()
 {
     Program newProgram;
-    QDir path("..\\..\\D-Care"); // assume it is some path
+    QString programPath = "";
+    if(bIsWow64){
+        programPath = "..\\..\\D-Care";
+    }else{
+        programPath = "..\\..\\D-Care(x86)";
+    }
+    QDir path(programPath); // assume it is some path
     path.setNameFilters(QStringList()<<"*.exe"<<"*.bat");
     QStringList programs = path.entryList();
     for(int i = 0; i < programs.count(); i++){
@@ -58,7 +98,13 @@ void MainWindow::on_actionAdd_Program_triggered()
 void MainWindow::loadPrograms()
 {
     Program loadedProgram;
-    QFile openedFile("programList.txt");
+    QString path = "";
+    if(bIsWow64){
+        path = "programList.txt";
+    }else{
+        path = "programList(x86).txt";
+    }
+    QFile openedFile(path);
     if(openedFile.open(QIODevice::ReadOnly)){
         QTextStream in(&openedFile);
         while(!in.atEnd()){
@@ -76,7 +122,13 @@ void MainWindow::loadPrograms()
 //programma's opslaan
 void MainWindow::savePrograms()
 {
-    QFile newFile("programList.txt");
+    QString path = "";
+    if(bIsWow64){
+        path = "programList.txt";
+    }else{
+        path = "programList(x86).txt";
+    }
+    QFile newFile(path);
     if(!newFile.open(QIODevice::WriteOnly)){
         qFatal("could not open file");
     }
