@@ -81,14 +81,16 @@ void MainWindow::on_actionAdd_Program_triggered()
     }else{
         programPath = "..\\..\\D-Care(x86)";
     }
+    ui->lstOutput->addItem("Path: " + programPath + "\n\r\n\r");
     QDir path(programPath); // assume it is some path
     path.setNameFilters(QStringList()<<"*.exe"<<"*.bat");
     QStringList programs = path.entryList();
     for(int i = 0; i < programs.count(); i++){
-        newProgram.setFullUrl("..\\..\\D-Care\\" + programs[i]);
+        newProgram.setFullUrl(programPath + "\\" + programs[i]);
         if(programExist(newProgram) == -1){
             m_programList.append(newProgram);
             ui->lstPrograms->addItem(newProgram.name());
+            ui->lstOutput->addItem(newProgram.fullUrl() + " Has been added.\n\r");
         }
     }
     removeUnusedPrograms(programs);
@@ -104,6 +106,7 @@ void MainWindow::loadPrograms()
     }else{
         path = "programList(x86).txt";
     }
+    ui->lstOutput->addItem("ProgramList: " + path + "\n\r\n\r");
     QFile openedFile(path);
     if(openedFile.open(QIODevice::ReadOnly)){
         QTextStream in(&openedFile);
@@ -113,6 +116,7 @@ void MainWindow::loadPrograms()
             loadedProgram.setScriptUrl(in.readLine());
             m_programList.append(loadedProgram);
             ui->lstPrograms->addItem(loadedProgram.name());
+            ui->lstOutput->addItem(loadedProgram.fullUrl() + " Has been loaded.\n\r");
         }
     }
     openedFile.close();
@@ -172,7 +176,6 @@ void MainWindow::processEnd(int, QProcess::ExitStatus status)
 void MainWindow::startInstall()
 {
     ui->btnStart->setDisabled(true);
-    ui->lstOutput->addItem("Starting install");
     if(processNumber <= m_programList.count()-1){
         if(m_programList[processNumber].hasScript()){
             fullUrl = m_programList[processNumber].scriptUrl();
@@ -183,6 +186,7 @@ void MainWindow::startInstall()
         if(m_programList[processNumber].hasArguments()){
             arg = m_programList[processNumber].arguments();
         }
+        ui->lstOutput->addItem("Starting install of:\n\r" + fullUrl + "\n\r");
         process->start(fullUrl, arg);
     }
     if(processNumber == m_programList.count()){
