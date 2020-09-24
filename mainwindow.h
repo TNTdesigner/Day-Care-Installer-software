@@ -8,6 +8,7 @@
 #include <qlistwidget.h>
 #include <QFile>
 #include <QTextStream>
+#include <windows.h>
 
 namespace Ui {
 class MainWindow;
@@ -39,6 +40,7 @@ private slots:
     int  programExist(Program);
     void removeUnusedPrograms(QStringList);
     void processEnd(int,QProcess::ExitStatus);
+    void IsWow64();
 
 private:
     Ui::MainWindow *ui;
@@ -49,6 +51,7 @@ private:
     int processNumber;
     QString fullUrl;
     QStringList arg;
+    BOOL bIsWow64;
 };
 
 #endif // MAINWINDOW_H

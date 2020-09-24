@@ -6,7 +6,7 @@
 
 #administrative richts
 win32 {
-#    RC_FILE = DayCareProgrtamIntaller.rc
+    RC_FILE = DayCareProgrtamIntaller.rc
 }
 
 QT       += core gui
